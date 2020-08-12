@@ -23,4 +23,18 @@ cat /etc/hosts
 echo "/etc/resolv.conf"
 cat /etc/resolv.conf
 
+#--mitm proxy--
+useradd --create-home mitmproxyuser
+iptables -t nat -A OUTPUT -p tcp -m owner ! --uid-owner mitmproxyuser --dport 80 -j REDIRECT --to-port 8080
+iptables -t nat -A OUTPUT -p tcp -m owner ! --uid-owner mitmproxyuser --dport 443 -j REDIRECT --to-port 8080
+su mitmproxyuser -c 'mitmdump --mode transparent -s /home/lisa/docker/mitmproxy/http_dump.py --showhost --set block_global=false | tee /tmp/total_traffic' &
+
+# wait for mitmproxy start
+sleep 20
+mkdir /usr/share/ca-certificates/extra/
+wget http://mitm.it/cert/pem -O /usr/share/ca-certificates/extra/mitm.crt
+echo "extra/mitm.crt"  >> /etc/ca-certificates.conf
+update-ca-certificates
+#--mitm proxy--
+
 su - lisa -c "celery -A lisa.web_api.tasks worker --loglevel=info --concurrency=1 -n lisa-worker@%h"

@@ -14,8 +14,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     openvpn \
     binutils \
     iprange \
+    iptables \
+    iputils-ping \
     wget \
     tar \
+    vim \
+    procps \
     e2tools \
     && git clone https://github.com/radare/radare2 \
     && radare2/sys/install.sh \
@@ -45,4 +49,6 @@ RUN pip install -r requirements.txt \
     && rm -rf /var/lib/apt/lists/* \
     && rm -rf /radare2/.git
 
+
+RUN pip install mitmproxy
 CMD ["./docker/worker/init.sh"]
