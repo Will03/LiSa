@@ -15,14 +15,14 @@ class MyAddon:
             f.request.headers["Cache-Control"] = "no-cache"
         ctx.log.alert("done")
 
-fp = open("/tmp/http_traffic",'w')
 
 addons = [
     MyAddon()
 ]
 
 def my_print(f_string):
-    fp.write(f_string+'\n')
+    with open("/tmp/http_traffic",'a') as fp:
+        fp.write(f_string+'\n')
     print(f_string)
 
 #def request(flow: http.HTTPFlow):
@@ -31,16 +31,19 @@ def my_print(f_string):
 
 
 def response(flow: http.HTTPFlow):
-    my_print("\n")
-    my_print("="*50)
+    result = '\n' + '='*20+ 'request info:' + '='*20 + '\n\n'
     #print("FOR: " + flow.request.url)
-    my_print(flow.request.method + " " + flow.request.path + " " + flow.request.http_version)
-
-    my_print("-"*50 + "request headers:")
+    result += flow.request.method + " " + flow.request.url + " " + flow.request.http_version + '\n'
+    result += '\n'+'-'*20 + 'request headers:' + '-'*20+'\n\n'
     for k, v in flow.request.headers.items():
-        my_print("%-20s: %s" % (k.upper(), v))
+        result += "%-20s: %s\n" % (k.upper(), v)
 
-    my_print("-"*50 + "response headers:")
+    result += '\n'+'-'*20 + 'response headers:'+'-'*20 +'\n\n'
+    result += "%-20s: %s\n"%("STATUS CODE",str(flow.response.status_code))
     for k, v in flow.response.headers.items():
-        my_print("%-20s: %s" % (k.upper(), v))
-    my_print(str(flow.response.content))
+        result += "%-20s: %s\n" % (k.upper(), v)
+
+    result += '\n'+'-'*20 + 'response content:' + '-'*20 + '\n\n'
+    result += str(flow.response.content)
+    my_print(result)
+    return result

@@ -99,6 +99,7 @@ class ReportOverview extends Component {
     window.open(
       "http://" + process.env.REACT_APP_HOST + "/api/output/" + this.props.id
     );
+
   };
 
   downloadMachineLog = () => {
@@ -107,6 +108,12 @@ class ReportOverview extends Component {
         process.env.REACT_APP_HOST +
         "/api/machinelog/" +
         this.props.id
+    );
+  };
+  
+  downloadHTTPSLog = () => {
+    window.open(
+      "http://" + process.env.REACT_APP_HOST + "/api/https/" + this.props.id
     );
   };
 
@@ -153,6 +160,14 @@ class ReportOverview extends Component {
             onClick={this.downloadMachineLog}
           >
             Machine log
+          </Button>
+
+          <Button
+            type="default"
+            icon="download"
+            onClick={this.downloadHTTPSLog}
+          >
+            HTTPS log
           </Button>
         </div>
 

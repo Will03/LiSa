@@ -15,6 +15,17 @@ const columnsHTTP = [
     dataIndex: "uri"
   }
 ];
+const columnsHTTPS = [
+  {
+    title: "Method",
+    dataIndex: "method",
+    width: 160
+  },
+  {
+    title: "URI",
+    dataIndex: "uri"
+  }
+];
 
 const columnsDNS = [
   {
@@ -27,6 +38,26 @@ const columnsDNS = [
     width: 200
   }
 ];
+
+
+const columnsTCP = [
+  {
+    title: "Source",
+    dataIndex: "SA",
+    width: 150
+  }, 
+  {
+    title: "Destination",
+    dataIndex: "DA",
+    width: 150
+  },
+  {
+    title: "Data",
+    dataIndex: "data",
+    width: 150
+  }
+];
+
 
 const columnsEndpoints = [
   {
@@ -97,6 +128,18 @@ class ReportNetwork extends Component {
       });
     }
 
+    this.httpsRequests = [];
+    for (let i = 0; i < r.https_requests.length; i++) {
+      this.httpsRequests.push({
+        key: i,
+        method: r.https_requests[i].method,
+        uri: r.https_requests[i].uri,
+        req_headers: r.https_requests[i].req_headers,
+        resp_headers: r.https_requests[i].resp_headers
+      });
+    }
+    this.tcp_connection = r.tcp_connection;
+
     this.endpoints = r.endpoints;
 
     this.telnetData = r.telnet_data;
@@ -117,6 +160,79 @@ class ReportNetwork extends Component {
         i++;
       }
     }
+    return <div className="row-detail">{data}</div>;
+  };
+
+  httpsDetailsRenderer = https => {
+    let headers = https.req_headers;
+    let data = [];
+    let i = 0;
+    let j=0;
+    data.push(
+       <p>
+         <span className="key">----Request---- </span>
+         <span className="value"> - </span>
+       </p>
+     );
+    for (let key in headers) {
+      if (headers.hasOwnProperty(key)) {
+        data.push(
+          <p key={i}>
+            <span className="key">{key}: </span>
+            <span className="value">{headers[key]}</span>
+          </p>
+        );
+        i++;
+      }
+    }
+    data.push(
+      <p>
+        <span className="key">----Response---- </span>
+        <span className="value"> - </span>
+      </p>
+    );
+
+    headers = https.resp_headers;
+    
+    for (let key in headers) {
+      if (headers.hasOwnProperty(key)) {
+        data.push(
+          <p key={i+j}>
+            <span className="key">{key}: </span>
+            <span className="value">{headers[key]}</span>
+          </p>
+        );
+        j++;
+      }
+    }
+    headers = https.headers;
+    
+    for (let key in headers) {
+      if (headers.hasOwnProperty(key)) {
+        data.push(
+          <p key={i+j}>
+            <span className="key">{key}: </span>
+            <span className="value">{headers[key]}</span>
+          </p>
+        );
+        j++;
+      }
+    }
+
+    return <div className="row-detail">{data}</div>;
+  };
+
+
+  tcpDetailsRenderer = tcp => {
+    let data = [];
+
+    data.push(
+      <p key={4}>
+        <span className="key">Direction: </span>
+        <span className="value">{tcp.direction}</span>
+      </p>
+    );
+
     return <div className="row-detail">{data}</div>;
   };
 
@@ -194,6 +310,15 @@ class ReportNetwork extends Component {
           expandedRowRender={this.endpointDetailsRenderer}
         />
 
+        <h3 className="report-section-headline">TCP connection</h3>
+
+        <Table
+          columns={columnsTCP}
+          dataSource={this.tcp_connection}
+          pagination={pagination}
+          expandedRowRender={this.tcpDetailsRenderer}
+        />
+
         <h3 className="report-section-headline">HTTP requests</h3>
 
         <Table
@@ -202,6 +327,16 @@ class ReportNetwork extends Component {
           pagination={pagination}
           expandedRowRender={this.httpDetailsRenderer}
         />
+        <h3 className="report-section-headline">HTTPS requests</h3>
+
+        <Table
+          columns={columnsHTTPS}
+          dataSource={this.httpsRequests}
+          pagination={pagination}
+          expandedRowRender={this.httpsDetailsRenderer}
+        />
+
+
 
         <h3 className="report-section-headline">DNS questions</h3>
 

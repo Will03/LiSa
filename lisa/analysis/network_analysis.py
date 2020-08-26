@@ -63,9 +63,9 @@ def is_ip_local(ipaddr):
     if ip >= 167772160 and ip < 184549376:
         return True
 
-    # 172.16.0.0 – 172.31.255.255
-    if ip >= 2886729728 and ip < 2887778304:
-        return True
+    # # 172.16.0.0 – 172.31.255.255
+    # if ip >= 2886729728 and ip < 2887778304:
+    #     return True
 
     # 192.168.x.x
     if ip >= 3232235520 and ip < 3232301056:
@@ -93,6 +93,8 @@ class NetworkAnalyzer(AbstractSubAnalyzer):
         self._dns_questions = set()
         self._irc_messages = []
         self._http_requests = []
+        self._https_requests = []
+        self._tcp_connect = []
         self._telnet_data = []
         self._port_statistics = {
             'TCP': collections.Counter(),
@@ -109,17 +111,24 @@ class NetworkAnalyzer(AbstractSubAnalyzer):
             self._reader_city = geoip2.database.Reader(city)
             self._reader_asn = geoip2.database.Reader(asn)
             self._maxmind = True
-
+            
+        if self._file:
+            self._https_path = f'{self._file.data_dir}/http_traffic'
+        else:
+            self._https_path = ''
         if pcap_path:
             self._pcap_path = os.path.abspath(pcap_path)
+            # self._https_path = ''
         else:
             self._pcap_path = f'{self._file.data_dir}/capture.pcap'
+            # self._https_path = f'{self._file.data_dir}/http_traffic'
 
         self._local_ip = None
 
         if file is not None:
             self._local_ip = '10.0.2.15'
-
+        
+        
     @property
     def pcap_path(self):
         """Path of analyzed pcap."""
@@ -260,6 +269,94 @@ class NetworkAnalyzer(AbstractSubAnalyzer):
             if len(packet.telnet.data.strip()) != 0:
                 self._telnet_data.append(packet.telnet.data)
 
+    def analyze_https(self):
+        # request = {
+        #     'method': packet.http.request_method,
+        #     'uri': packet.http.request_uri,
+        #     'version': packet.http.version,
+        #     'headers': {}
+        # }
+        # # headers
+        # for key in packet.http.headers:
+        #     request['headers'][key] = packet.http.headers[key]
+        if not os.path.isfile(self._https_path):
+            return
+        if os.stat(self._https_path).st_size == 0:
+            return
+        
+        with open(self._https_path,'r') as fp:
+            while True:
+                line = fp.readline()
+                if not line:
+                    break
+        
+                if 'request info:' in line:
+                    # for line in iter(fp.readline, "\n"):
+                    #     pass
+                    fp.readline()
+                    line = fp.readline()
+                    if not line:
+                        break
+                    request_info = line.split(' ')
+                    request = {           
+                        'method': request_info[0],
+                        'uri': request_info[1],
+                        'version': request_info[2]
+                    }
+
+                elif 'request headers:' in line:
+                    fp.readline()
+                    line = fp.readline()
+                    req_header={}
+                    if not line:
+                        break
+                    while not line == '\n':
+                        header_info = line.split(':')
+                        value= header_info[1].strip('\n')
+                        if not value == '':
+                            req_header[header_info[0][0:13]] = value
+                        line = fp.readline()
+                    request['req_headers']=req_header
+                    
+
+                elif 'response headers:' in line:
+                    fp.readline()
+                    line = fp.readline()
+                    resp_header={}
+                    if not line:
+                        break
+                    while not line == '\n':
+                        header_info = line.split(':')
+                        value= header_info[1].strip('\n')
+                        if not value == '':
+                            resp_header[header_info[0][0:13]] = value
+                        line = fp.readline()
+                    request['resp_headers']=resp_header
+
+                    self._https_requests.append(request)
+                elif 'response content:' in line:
+                    pass
+                else:
+                    pass
+                
+        
+        # request = {
+        #     'method': 'GET',
+        #     'uri': 'https://aaa.bbbb.ccc',
+        #     'version': 'HTTP1.1',
+        #     'headers': {
+        #         "Accept": "text/*",
+        #         "Cache-Control": "max-age=0",
+        #         "Host": "security.ubuntu.com",
+        #         "If-Modified-Since": "Thu, 30 Jul 2020 06:09:00 GMT",
+        #         "User-Agent": "Debian APT-HTTP/1.3 (1.2.32ubuntu0.1)"
+        #     }
+        # }
+            
+        # self._https_requests.append(request)
+
+
+
     def analyze_pcap(self):
         """Analyzes captured pcap file. Fills self._endpoints,
         self._port_statistics, self._syn_count, self._fin_count and others.
@@ -267,9 +364,11 @@ class NetworkAnalyzer(AbstractSubAnalyzer):
 
         endpoints = {}
 
+        self.analyze_https()
+
         if self._local_ip is None:
             self._local_ip = disspcap.most_common_ip(self._pcap_path)
-
+        print("local ip: ",self._local_ip)
         pcap = disspcap.Pcap(self._pcap_path)
 
         while True:
@@ -293,7 +392,7 @@ class NetworkAnalyzer(AbstractSubAnalyzer):
                     ip = packet_ip.destination
                     port = str(packet.tcp.destination_port)
                     length = packet.tcp.payload_length
-
+                    payload = packet.tcp.payload
                     if packet.tcp.syn:
                         # search for syn scan
                         self._syn_count += 1
@@ -310,11 +409,16 @@ class NetworkAnalyzer(AbstractSubAnalyzer):
                         if ip not in endpoints:
                             endpoint = self._analyze_endpoint(ip)
                             endpoints[ip] = endpoint
-
                         endpoints[ip]['data_out'] += length
-
                         if port not in endpoints[ip]['ports']:
                             endpoints[ip]['ports'].append(port)
+                        mytcp = {
+                            'SA': "%s:%d"%(packet_ip.source,packet.tcp.source_port),
+                            'DA': "%s:%d"%(packet_ip.destination,packet.tcp.destination_port),
+                            'direction': "Outgoing",
+                            'data': str(payload[:30])
+                        }
+                        self._tcp_connect.append(mytcp)
 
                     self._port_statistics['TCP'][port] += 1
 
@@ -323,7 +427,7 @@ class NetworkAnalyzer(AbstractSubAnalyzer):
                     ip = packet_ip.source
                     port = str(packet.tcp.source_port)
                     length = packet.tcp.payload_length
-
+                    payload = packet.tcp.payload
                     if length != 0:
                         if ip not in endpoints:
                             endpoint = self._analyze_endpoint(ip)
@@ -333,6 +437,13 @@ class NetworkAnalyzer(AbstractSubAnalyzer):
 
                         if port not in endpoints[ip]['ports']:
                             endpoints[ip]['ports'].append(port)
+                        mytcp = {
+                            'SA': "%s:%d"%(packet_ip.source,packet.tcp.source_port),
+                            'DA': "%s:%d"%(packet_ip.destination,packet.tcp.destination_port),
+                            'direction': "Income",
+                            'data': str(payload[:30])
+                        }
+                        self._tcp_connect.append(mytcp)
 
                     self._port_statistics['TCP'][port] += 1
 
@@ -426,9 +537,9 @@ class NetworkAnalyzer(AbstractSubAnalyzer):
                     'type': qtype
                 }
             )
-
+        self._output['https_requests'] = self._https_requests
         self._output['http_requests'] = self._http_requests
-
+        self._output['tcp_connection'] = self._tcp_connect
         self._output['telnet_data'] = self._telnet_data
 
         most_common_tcp = self._port_statistics['TCP'].most_common()
@@ -455,3 +566,4 @@ class NetworkAnalyzer(AbstractSubAnalyzer):
         }
 
         self._output['endpoints'] = self._endpoints
+        

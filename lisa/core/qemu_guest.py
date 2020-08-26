@@ -119,6 +119,8 @@ class QEMUGuest():
         """
         log.debug('Starting analysis module and target binary.')
 
+        os.system("cat /dev/null> /tmp/http_traffic")
+
         self.send_command('tcpdump -i eth0 -w /stap/capture.pcap &')
 
         time.sleep(1)
@@ -167,6 +169,13 @@ class QEMUGuest():
             f'{self._file.data_dir}/'
         )
         os.system(extract_pcap)
+
+        move_http = (
+            'cp '
+            f'/tmp/http_traffic '
+            f'{self._file.data_dir}/'
+        )
+        os.system(move_http)
 
         log.debug('Behavioral info (behav.out) saved in data directory.')
 

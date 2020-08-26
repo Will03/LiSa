@@ -287,3 +287,15 @@ def download_console_output(id):
         return jsonify(res), 404
 
     return send_file(log_file, as_attachment=True)
+
+@app.route('/api/https/<id>', methods=['GET'])
+def download_https_log(id):
+    """Download https log."""
+    log_file = f'{storage_path}/{id}/http_traffic'
+
+    if not os.path.isfile(log_file):
+        res = ErrorAPIResponse(1005).to_dict()
+        return jsonify(res), 404
+
+    return send_file(log_file, as_attachment=True)
+

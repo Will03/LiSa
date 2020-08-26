@@ -31,6 +31,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY --chown=lisa:lisa ./data /home/lisa/data
 COPY --chown=lisa:lisa ./docker /home/lisa/docker
 COPY --chown=lisa:lisa ./lisa /home/lisa/lisa
+COPY --chown=lisa:lisa ./tests /home/lisa/tests
 COPY --chown=lisa:lisa ./requirements.txt /home/lisa/requirements.txt
 
 ENV PYTHONPATH /home/lisa
