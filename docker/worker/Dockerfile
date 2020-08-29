@@ -33,7 +33,7 @@ COPY --chown=lisa:lisa ./docker /home/lisa/docker
 COPY --chown=lisa:lisa ./lisa /home/lisa/lisa
 COPY --chown=lisa:lisa ./tests /home/lisa/tests
 COPY --chown=lisa:lisa ./requirements.txt /home/lisa/requirements.txt
-
+COPY --chown=lisa:lisa ./docker/worker/x86_64_images_patch /home/lisa/images/x86_64/images
 ENV PYTHONPATH /home/lisa
 
 WORKDIR /home/lisa

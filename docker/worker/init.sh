@@ -29,7 +29,7 @@ iptables -t nat -A OUTPUT -p tcp -m owner ! --uid-owner mitmproxyuser --dport 80
 iptables -t nat -A OUTPUT -p tcp -m owner ! --uid-owner mitmproxyuser --dport 443 -j REDIRECT --to-port 8080
 touch /tmp/http_traffic
 chmod 777 /tmp/http_traffic
-su mitmproxyuser -c 'mitmdump --mode transparent -s /home/lisa/docker/mitmproxy/http_dump.py --showhost --set block_global=false | tee /tmp/total_traffic' &
+su mitmproxyuser -c 'mitmdump --mode transparent --ssl-insecure -s /home/lisa/docker/mitmproxy/http_dump.py --showhost --set block_global=false | tee /tmp/total_traffic' &
 
 # wait for mitmproxy start
 sleep 20
