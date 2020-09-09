@@ -4,7 +4,7 @@ import sys
 if len(sys.argv) >= 2:
     file_path = sys.argv[1]
 else:
-    print('No file')
+    print("Help: ./upload_file.py <file>")
     exit()
 
 my_file = {'file': open(file_path,'rb')}

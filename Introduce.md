@@ -108,3 +108,15 @@
         - 新增 analyze_https function 讀取 https 記錄檔，並寫進報告中
         - 修改 analyze_pcap function 將 TCP 連線資訊寫進報告中
     
+## 測試
+tests/APItest/
+
+提供四種腳本可直接測試
+- upload_file.py
+- check_report.py
+- list_report.py
+- get_report.py
+
+可利用此 ELF 執行檔，來測試系統
+- for_testing
+    - 此程式會有 HTTPS, TCP 連線行為
