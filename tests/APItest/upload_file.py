@@ -11,6 +11,6 @@ my_file = {'file': open(file_path,'rb')}
 my_params = {'pretty':'true'}
 
 
-r = requests.post('http://127.0.0.1:4242/api/tasks/create/file'.format(status),files=my_file ,params=my_params)
+r = requests.post('http://127.0.0.1:4242/api/tasks/create/file',files=my_file ,params=my_params)
 
 print(r.json())

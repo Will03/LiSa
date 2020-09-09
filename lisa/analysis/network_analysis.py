@@ -270,15 +270,6 @@ class NetworkAnalyzer(AbstractSubAnalyzer):
                 self._telnet_data.append(packet.telnet.data)
 
     def analyze_https(self):
-        # request = {
-        #     'method': packet.http.request_method,
-        #     'uri': packet.http.request_uri,
-        #     'version': packet.http.version,
-        #     'headers': {}
-        # }
-        # # headers
-        # for key in packet.http.headers:
-        #     request['headers'][key] = packet.http.headers[key]
         if not os.path.isfile(self._https_path):
             return
         if os.stat(self._https_path).st_size == 0:
@@ -291,8 +282,6 @@ class NetworkAnalyzer(AbstractSubAnalyzer):
                     break
         
                 if 'request info:' in line:
-                    # for line in iter(fp.readline, "\n"):
-                    #     pass
                     fp.readline()
                     line = fp.readline()
                     if not line:
@@ -338,24 +327,6 @@ class NetworkAnalyzer(AbstractSubAnalyzer):
                     pass
                 else:
                     pass
-                
-        
-        # request = {
-        #     'method': 'GET',
-        #     'uri': 'https://aaa.bbbb.ccc',
-        #     'version': 'HTTP1.1',
-        #     'headers': {
-        #         "Accept": "text/*",
-        #         "Cache-Control": "max-age=0",
-        #         "Host": "security.ubuntu.com",
-        #         "If-Modified-Since": "Thu, 30 Jul 2020 06:09:00 GMT",
-        #         "User-Agent": "Debian APT-HTTP/1.3 (1.2.32ubuntu0.1)"
-        #     }
-        # }
-            
-        # self._https_requests.append(request)
-
-
 
     def analyze_pcap(self):
         """Analyzes captured pcap file. Fills self._endpoints,
